@@ -4,6 +4,7 @@
 #include <Adafruit_SSD1306.h>
 #include <SoftwareSerial.h>
 #include <Timer.h>
+#include "bitmaps.h"
 
 //Defines
 #define SCREEN_WIDTH 128  //Width in px
@@ -18,20 +19,16 @@
 
 #define PUMP_PIN D7
 
-// //Pins
-int d5 = 5;  //orange PIN 4 Mara TX to Arduino RX D5
-int d6 = 6;  //black  PIN 3 Mara RX to Arduino TX D6
-
 //Internals
 bool reedOpenSensor = true;
-long lastPumpOnMillis = 0;
+
 long timerStartMillis = 0;
 long timerStopMillis = 0;
 long timerDisplayOffMillis = 0;
 int timerCount = 0;
 bool timerStarted = false;
 bool displayOn = false;
-int seconds = 0;
+
 int prevTimerCount = 0;
 long serialTimeout = 0;
 char buffer[BUFFER_SIZE];
@@ -42,45 +39,9 @@ int HeatDisplayToggle = 0;
 
 int pumpInValue = 0;
 
+const int Sim = 1;
 
-const int Sim = 0;
-
-//Bitmap Data
-// 'steam30, 30x30px
-const unsigned char steam30[] PROGMEM = {
-  0x00, 0x18, 0x30, 0x00, 0x00, 0x18, 0x30, 0x00, 0x00, 0x30, 0x18, 0x00, 0x00, 0x70, 0x1c, 0x00,
-  0x00, 0x60, 0x0c, 0x00, 0x00, 0x61, 0x0c, 0x00, 0x00, 0x73, 0x1c, 0x00, 0x00, 0x33, 0x18, 0x00,
-  0x00, 0x39, 0xb8, 0x00, 0x00, 0x19, 0xb0, 0x00, 0x00, 0x1b, 0xb0, 0x00, 0x07, 0x1b, 0x31, 0xc0,
-  0x0f, 0x3b, 0x39, 0xe0, 0x3c, 0x71, 0x9c, 0x70, 0x30, 0x61, 0x8c, 0x30, 0x60, 0xe1, 0x0e, 0x18,
-  0x60, 0xc3, 0x06, 0x18, 0xc0, 0x03, 0x00, 0x0c, 0xc0, 0x03, 0x80, 0x0c, 0x60, 0x01, 0x80, 0x18,
-  0x60, 0x01, 0x80, 0x18, 0x30, 0x00, 0x00, 0x30, 0x3c, 0x00, 0x00, 0xf0, 0x0f, 0x80, 0x07, 0xc0,
-  0x07, 0xc0, 0x0f, 0x80, 0x00, 0xc0, 0x0c, 0x00, 0x00, 0xe0, 0x1c, 0x00, 0x00, 0x70, 0x38, 0x00,
-  0x00, 0x3f, 0xf0, 0x00, 0x00, 0x0f, 0xc0, 0x00
-};
-
-// 'steam12, 12x12px
-const unsigned char steam12[] PROGMEM = {
-  0x10, 0x80, 0x09, 0x00, 0x09, 0x00, 0x10, 0x80, 0x09, 0x00, 0x69, 0x60, 0x81, 0x10, 0x82, 0x10,
-  0x60, 0x60, 0x10, 0x80, 0x19, 0x80, 0x06, 0x00
-};
-
-// 'coffeeCup12', 12x12px
-const unsigned char coffeeCup12[] PROGMEM = {
-  0x02, 0x00, 0x11, 0x00, 0x0a, 0x00, 0x10, 0x00, 0x08, 0x00, 0x7f, 0x80, 0x80, 0x60, 0x80, 0x50,
-  0xc0, 0xe0, 0x40, 0x80, 0x61, 0x80, 0x3f, 0x00
-};
-
-// 'coffeeCup30', 30x30px
-const unsigned char coffeeCup30[] PROGMEM = {
-  0x00, 0x06, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x0e, 0x00, 0x00,
-  0x00, 0x67, 0x00, 0x00, 0x00, 0x73, 0x80, 0x00, 0x00, 0x39, 0x80, 0x00, 0x00, 0x39, 0x80, 0x00,
-  0x00, 0x73, 0x80, 0x00, 0x00, 0xe3, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0xe0, 0x00, 0x00,
-  0x00, 0x60, 0x00, 0x00, 0x3f, 0xff, 0xfc, 0x00, 0x7f, 0xff, 0xfe, 0x00, 0xc0, 0x00, 0x03, 0xc0,
-  0xc0, 0x00, 0x03, 0xf0, 0xc0, 0x00, 0x03, 0x38, 0xe0, 0x00, 0x07, 0x1c, 0x60, 0x00, 0x07, 0x0c,
-  0x60, 0x00, 0x06, 0x0c, 0x70, 0x00, 0x0e, 0x1c, 0x30, 0x00, 0x0c, 0x38, 0x38, 0x00, 0x1f, 0xf0,
-  0x18, 0x00, 0x1f, 0xc0, 0x1c, 0x00, 0x38, 0x00, 0x0e, 0x00, 0x70, 0x00, 0x07, 0x00, 0xe0, 0x00,
-  0x03, 0xff, 0xc0, 0x00, 0x01, 0xff, 0x80, 0x00
-};
+int tt = 8;
 
 //Mara Data
 String maraData[7];
@@ -99,7 +60,7 @@ void SetSim() {
     maraData[3] = String("199");
     maraData[4] = String("0840");
     maraData[5] = String("0");
-    maraData[6] = String("0");
+    maraData[6] = String("1");
   }
 }
 
@@ -117,8 +78,6 @@ void setup() {
 
   t.every(1000, updateView);
 }
-
-
 
 void getMaraData() {
   /*
@@ -152,7 +111,7 @@ void getMaraData() {
       }
     }
   }
-  if (millis() - serialTimeout > 6000) {
+  if (millis() - serialTimeout > 1000) {
     isMaraOff = 1;
     SetSim();
     serialTimeout = millis();
@@ -161,9 +120,9 @@ void getMaraData() {
 }
 
 void detectChanges() {
-  if (maraData[0] == 0) {
-    isMaraOff = 1;
-  }
+  // if (maraData[0] == 0 && Sim == 0) {
+  //   isMaraOff = 1;
+  // }
   digitalWrite(LED_BUILTIN, digitalRead(PUMP_PIN));
   if (reedOpenSensor) {
     pumpInValue = digitalRead(PUMP_PIN);
@@ -171,7 +130,8 @@ void detectChanges() {
     pumpInValue = !digitalRead(PUMP_PIN);
   }
 
-  if (maraData[6].toInt() == 1) {
+  // if (maraData[6].toInt() == 1) {
+  if (!pumpInValue) {
     if (!timerStarted) {
       timerStartMillis = millis();
       timerStarted = true;
@@ -179,11 +139,11 @@ void detectChanges() {
       Serial.println("Start pump");
     }
   }
-  if (maraData[6].toInt() == 0) {
+  // if (maraData[6].toInt() == 0) {
+  if (pumpInValue) {
     if (timerStarted) {
       if (timerStopMillis == 0) {
         timerStopMillis = millis();
-        //delay(4000);
       }
       if (millis() - timerStopMillis > 500) {
         timerStarted = false;
@@ -191,6 +151,9 @@ void detectChanges() {
         timerDisplayOffMillis = millis();
         display.invertDisplay(false);
         Serial.println("Stop pump");
+        tt = 4;
+
+        delay(4000);
       }
     }
   } else {
@@ -219,7 +182,7 @@ void updateView() {
   display.clearDisplay();
   display.setTextColor(WHITE);
 
-  if (isMaraOff == 1) {
+  if (isMaraOff == 99) {
     display.setCursor(30, 6);
     display.setTextSize(2);
     display.print("MARA X");
@@ -231,10 +194,77 @@ void updateView() {
       // draw the timer on the right
       display.fillRect(60, 9, 63, 55, BLACK);
       display.setTextSize(5);
-      display.setCursor(68, 16);
+      display.setCursor(68, 18);
       display.print(getTimer());
-      //Coffee temperature and bitmap
-      display.drawBitmap(17, 14, coffeeCup30, 30, 30, WHITE);
+
+      if (timerCount > 20) {
+        
+      }      
+
+      if (tt >= 1 && timerCount < 24) {
+        if (tt == 8) {
+          display.drawBitmap(17, 14, coffeeCup30_01, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 7) {
+          display.drawBitmap(17, 14, coffeeCup30_02, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 6) {
+          display.drawBitmap(17, 14, coffeeCup30_03, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 5) {
+          display.drawBitmap(17, 14, coffeeCup30_04, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 4) {
+          display.drawBitmap(17, 14, coffeeCup30_05, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 3) {
+          display.drawBitmap(17, 14, coffeeCup30_06, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 2) {
+          display.drawBitmap(17, 14, coffeeCup30_07, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 1) {
+          display.drawBitmap(17, 14, coffeeCup30_08, 30, 30, WHITE);
+          Serial.println(tt);
+        }
+        if (tt == 1 && timerCount < 24) {
+          tt = 8;
+        } else {
+          tt--;
+        }
+      } else {
+        if (tt == 8) {
+          display.drawBitmap(17, 14, coffeeCup30_09, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 7) {
+          display.drawBitmap(17, 14, coffeeCup30_10, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 6) {
+          display.drawBitmap(17, 14, coffeeCup30_11, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 5) {
+          display.drawBitmap(17, 14, coffeeCup30_12, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 4) {
+          display.drawBitmap(17, 14, coffeeCup30_13, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 3) {
+          display.drawBitmap(17, 14, coffeeCup30_14, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 2) {
+          display.drawBitmap(17, 14, coffeeCup30_15, 30, 30, WHITE);
+          Serial.println(tt);
+        } else if (tt == 1) {
+          display.drawBitmap(17, 14, coffeeCup30_16, 30, 30, WHITE);
+          Serial.println(tt);
+        }
+        if (tt == 1) {
+          tt = 8;
+        } else {
+          tt--;
+        }
+      }
+
       if (maraData[3].toInt() < 100) {
         display.setCursor(19, 50);
       } else {
@@ -248,7 +278,7 @@ void updateView() {
       display.print("C");
     } else {
       //Coffee temperature and bitmap
-      display.drawBitmap(17, 14, coffeeCup30, 30, 30, WHITE);
+      display.drawBitmap(17, 14, coffeeCup30_00, 30, 30, WHITE);
       if (maraData[3].toInt() < 100) {
         display.setCursor(19, 50);
       } else {
@@ -276,8 +306,6 @@ void updateView() {
       display.print("C");
 
       //Draw Line
-      // display.drawLine(74, 0, 74, 64, WHITE);
-      // display.drawLine(0, 18, 128, 18, WHITE);
       display.drawLine(display.width() / 2, 12, display.width() / 2, 64, WHITE);
 
       //Boiler
