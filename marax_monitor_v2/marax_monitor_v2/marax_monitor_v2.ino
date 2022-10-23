@@ -36,11 +36,8 @@ int bufferIndex = 0;
 int isMaraOff = 0;
 long lastToggleTime = 0;
 int HeatDisplayToggle = 0;
-
 int pumpInValue = 0;
-
-const int Sim = 1;
-
+const int Sim = 0;
 int tt = 8;
 
 //Mara Data
@@ -130,8 +127,8 @@ void detectChanges() {
     pumpInValue = !digitalRead(PUMP_PIN);
   }
 
-  // if (maraData[6].toInt() == 1) {
-  if (!pumpInValue) {
+  if (maraData[6].toInt() == 1) {
+  // if (!pumpInValue) {
     if (!timerStarted) {
       timerStartMillis = millis();
       timerStarted = true;
@@ -139,8 +136,8 @@ void detectChanges() {
       Serial.println("Start pump");
     }
   }
-  // if (maraData[6].toInt() == 0) {
-  if (pumpInValue) {
+  if (maraData[6].toInt() == 0) {
+  // if (pumpInValue) {
     if (timerStarted) {
       if (timerStopMillis == 0) {
         timerStopMillis = millis();
@@ -151,7 +148,7 @@ void detectChanges() {
         timerDisplayOffMillis = millis();
         display.invertDisplay(false);
         Serial.println("Stop pump");
-        tt = 4;
+        tt = 8;
 
         delay(4000);
       }
@@ -194,14 +191,29 @@ void updateView() {
       // draw the timer on the right
       display.fillRect(60, 9, 63, 55, BLACK);
       display.setTextSize(5);
-      display.setCursor(68, 18);
+      display.setCursor(68, 20);
       display.print(getTimer());
 
-      if (timerCount > 20) {
-        
+      if (timerCount >= 20 && timerCount <= 24) {
+      display.setTextSize(5);
+      display.setCursor(68, 20);
+        display.print(getTimer());
+
+        display.setTextSize(1);
+        display.setCursor(38, 2);
+        display.print("Get ready");
+      }
+      if (timerCount > 24) {
+        display.setTextSize(5);
+        display.setCursor(68, 20);
+        display.print(getTimer());
+
+        display.setTextSize(1);
+        display.setCursor(35, 2);
+        display.print("You missed");
       }      
 
-      if (tt >= 1 && timerCount < 24) {
+      if (tt >= 1 && timerCount <= 23) {
         if (tt == 8) {
           display.drawBitmap(17, 14, coffeeCup30_01, 30, 30, WHITE);
           Serial.println(tt);
@@ -227,7 +239,7 @@ void updateView() {
           display.drawBitmap(17, 14, coffeeCup30_08, 30, 30, WHITE);
           Serial.println(tt);
         }
-        if (tt == 1 && timerCount < 24) {
+        if (tt == 1 && timerCount <= 24) {
           tt = 8;
         } else {
           tt--;
@@ -306,7 +318,7 @@ void updateView() {
       display.print("C");
 
       //Draw Line
-      display.drawLine(display.width() / 2, 12, display.width() / 2, 64, WHITE);
+      display.drawLine(66, 14, 66, 64, WHITE);
 
       //Boiler
       if (maraData[5].toInt() == 1) {
