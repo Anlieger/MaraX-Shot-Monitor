@@ -6,7 +6,7 @@
 #include <Timer.h>
 #include "bitmaps.h"
 
-//Defines
+//Definessss
 #define SCREEN_WIDTH 128  //Width in px
 #define SCREEN_HEIGHT 64  // Height in px
 #define OLED_RESET -1
