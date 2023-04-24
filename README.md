@@ -1,4 +1,4 @@
-# MaraX-Monitor
+# MaraX-Shot-Monitor
 
 This repository is based on the marax_timer [marax_timer](https://github.com/alexrus/marax_timer) by [Alexrus](https://github.com/alexrus) and the [marax-monitor](https://github.com/SaibotFlow/marax-monitor) by [SaibotFlow](https://github.com/SaibotFlow)
 Check out their more detailed documentation
