@@ -1,3 +1,17 @@
+/* Copyright (C) 2023 Florian Bielsky
+This file is part of MaraX-Shot-Monitor <https://github.com/Anlieger/MaraX-Shot-Monitor>.
+
+MaraX-Shot-Timer is a free software you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MaraX-Shot-timer is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+*/
+
 //Includes
 #include <Wire.h>
 #include <Adafruit_GFX.h>
